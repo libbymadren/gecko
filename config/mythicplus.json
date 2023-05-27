@@ -1,0 +1,14 @@
+{
+    "season2": {
+        "dungeons":{
+            "HOI": "Halls of Infusion",
+            "BH": "Brackenhide Hollow",
+            "ULD": "Uldaman: Legacy of Tyr",
+            "NEL": "Neltharus",
+            "NL": "Neltharion\"s Lair",
+            "FH": "Freehold",
+            "UR": "Underrot",
+            "VP": "Vortex Pinnacle"
+        }
+    }
+}
