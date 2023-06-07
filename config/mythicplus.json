@@ -10,5 +10,10 @@
             "UR": "Underrot",
             "VP": "Vortex Pinnacle"
         }
+    },
+    "group_restrictions":{
+        "tanks":1,
+        "healers":1,
+        "dps":3
     }
 }
