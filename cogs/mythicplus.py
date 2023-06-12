@@ -15,14 +15,12 @@ class MythicKeyGroup():
     self.healer = []
     self.dps = []
   
-
   def set_tank(self, player):
     
     # if self.tanks in 
     # if not self.tanks:
 
     pass
-
 
   def get_group(self):
     return {
@@ -77,7 +75,6 @@ class ButtonView(discord.ui.View):
       dps_player = f"\n<@{interaction.user.id}>"
       self.group.dps.append(dps_player)
       dps_value += dps_player
-      self.dpsCount += 1  
       self.embed.set_field_at(index=2,name="DPS:",value=dps_value)
       await interaction.response.defer()
       await interaction.edit_original_response(content=self.msg, embed=self.embed)
