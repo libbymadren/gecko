@@ -10,9 +10,10 @@ activeGroupIDs = []
 DEFAULT_ENTRY = ""
 
 class MythicKeyGroup():
-  def __init__(self):
-    self.tank = []
-    self.healer = []
+  def __init__(self, groupOwner):
+    self.groupOwner = groupOwner
+    self.tank = ""
+    self.healer = ""
     self.dps = []
   
   def set_tank(self, player):
@@ -29,13 +30,27 @@ class MythicKeyGroup():
       "keyLevel":self.keyLevel,
       "tank":self.tank,
       "healer":self.healer,
-      "dps":self.dps
+      "dps":self.dps,
     }
   
   def reset_group(self): 
-    self.tank = []
-    self.healer = []
+    self.tank = ""
+    self.healer = ""
     self.dps = []
+
+  def remove_user(self, user):
+    match user:
+      case self.tank:
+        self.tank = ""
+      case self.healer:
+        self.healer = ""
+      case default:
+        self.dps.remove(user)
+  
+  def getGroupList(self):
+    groupList = [self.tank, self.healer]
+    groupList.extend(self.dps)
+    return groupList
 
 class ButtonView(discord.ui.View): 
   def __init__(self, embed, msg, group, timeout=180):
@@ -47,42 +62,50 @@ class ButtonView(discord.ui.View):
 
   @discord.ui.button(label="Tank", row=0, style=discord.ButtonStyle.primary, emoji=discord.PartialEmoji.from_str("<:tank_icon_white:1117620737558196244>"))
   async def tank_button(self, button, interaction):
-    if len(self.group.tank) < 1:
-      tank_player = f"<@{interaction.user.id}>"
-      self.group.tank.append(tank_player)
-      self.embed.set_field_at(index=0,name="Tank:",value=tank_player)
+    user = interaction.user.id
+    if user in self.group.getGroupList():
+      await interaction.response.send_message("You've already signed up for this group!", ephemeral=True)
+    elif self.group.tank:
+      await interaction.response.send_message("This group is full on tanks!", ephemeral=True) 
+    else:
+      self.group.tank = user
+      self.embed.set_field_at(index=0,name="Tank:",value=f"<@{user}>")
       await interaction.response.defer()
       await interaction.edit_original_response(content=self.msg, embed=self.embed)
-    else:
-      await interaction.response.send_message("This group is full on tanks!", ephemeral=True) 
 
   @discord.ui.button(label="Healer", row=0, style=discord.ButtonStyle.primary, emoji=discord.PartialEmoji.from_str("<:healer_icon_white:1117620718155354162>"))
   async def heal_button(self, button, interaction):
-    if len(self.group.healer) < 1:
-      healer_player = f"<@{interaction.user.id}>"
-      self.group.healer.append(healer_player)
-      self.embed.set_field_at(index=1,name="Healer:",value=healer_player, inline=False)
+    user = interaction.user.id
+    if user in self.group.getGroupList():
+      await interaction.response.send_message("You've already signed up for this group!", ephemeral=True)
+    elif self.group.healer:
+      await interaction.response.send_message("This group is full on healers!", ephemeral=True) 
+    else:
+      self.group.healer = user
+      self.embed.set_field_at(index=1,name="Healer:",value=f"<@{user}>", inline=False)
       await interaction.response.defer()
       await interaction.edit_original_response(content=self.msg, embed=self.embed)
-    else:
-      await interaction.response.send_message("This group is full on healers!", ephemeral=True) 
 
   @discord.ui.button(label="DPS", row=0, style=discord.ButtonStyle.primary, emoji=discord.PartialEmoji.from_str("<:dps_icon_white:1117620696818921493>"))
   async def dps_button(self, button, interaction):
-    embed_dict = self.embed.to_dict()
-    dps_value = embed_dict["fields"][2]["value"]
-    if len(self.group.dps) < 3:
-      dps_player = f"\n<@{interaction.user.id}>"
-      self.group.dps.append(dps_player)
-      dps_value += dps_player
+    user = interaction.user.id
+    if user in self.group.getGroupList():
+      await interaction.response.send_message("You've already signed up for this group!", ephemeral=True)
+    elif len(self.group.dps) >= 3:
+      await interaction.response.send_message("This group is full on DPS!", ephemeral=True) 
+    else:
+      embed_dict = self.embed.to_dict()
+      dps_value = embed_dict["fields"][2]["value"]
+      self.group.dps.append(user)
+      dps_value += f"\n<@{user}>"
       self.embed.set_field_at(index=2,name="DPS:",value=dps_value)
       await interaction.response.defer()
       await interaction.edit_original_response(content=self.msg, embed=self.embed)
-    else:
-      await interaction.response.send_message("This group is full on DPS!", ephemeral=True) 
 
-  @discord.ui.button(label="Remove Self", row=1, style=discord.ButtonStyle.secondary)
+  @discord.ui.button(label="Remove Self", row=0, style=discord.ButtonStyle.secondary)
   async def remove_self_button(self, button, interaction):
+    user = interaction.user.id
+    self.group.remove_user(user)
     embed_dict = self.embed.to_dict()
     self.embed.set_field_at(index=0,name="Tank:",value=DEFAULT_ENTRY)
     self.embed.set_field_at(index=1,name="Healer:",value=DEFAULT_ENTRY, inline=False)
@@ -91,15 +114,16 @@ class ButtonView(discord.ui.View):
     await interaction.edit_original_response(content=self.msg, embed=self.embed)
 
   # TODO: make this button only visible to the group owner
-  @discord.ui.button(label="Reset Group", row=1, style=discord.ButtonStyle.secondary)
-  async def reset_group_button(self, button, interaction):
-    self.group.reset_group()
-    embed_dict = self.embed.to_dict()
-    self.embed.set_field_at(index=0,name="Tank:",value=DEFAULT_ENTRY)
-    self.embed.set_field_at(index=1,name="Healer:",value=DEFAULT_ENTRY, inline=False)
-    self.embed.set_field_at(index=2,name="DPS:",value=DEFAULT_ENTRY)
-    await interaction.response.defer()
-    await interaction.edit_original_response(content=self.msg, embed=self.embed)
+  # actually, I'm just going to hide this button for now, I don't think it'll be useful other than for debugging
+  # @discord.ui.button(label="Reset Group", row=1, style=discord.ButtonStyle.secondary)
+  # async def reset_group_button(self, button, interaction):
+  #   self.group.reset_group()
+  #   embed_dict = self.embed.to_dict()
+  #   self.embed.set_field_at(index=0,name="Tank:",value=DEFAULT_ENTRY)
+  #   self.embed.set_field_at(index=1,name="Healer:",value=DEFAULT_ENTRY, inline=False)
+  #   self.embed.set_field_at(index=2,name="DPS:",value=DEFAULT_ENTRY)
+  #   await interaction.response.defer()
+  #   await interaction.edit_original_response(content=self.msg, embed=self.embed)
 
 class MythicPlus(commands.Cog):
   def __init__(self, bot, config):
@@ -125,8 +149,9 @@ class MythicPlus(commands.Cog):
     embed.add_field(name="Healer:", value=DEFAULT_ENTRY, inline=False)
     embed.add_field(name="DPS:", value=DEFAULT_ENTRY, inline=True)
         
-    msg = f"<@{ctx.author.id}> is looking for a mythic+ group!"
-    await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, MythicKeyGroup()))
+    author = ctx.author.id
+    msg = f"<@{author}> is looking for a mythic+ group!"
+    await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, MythicKeyGroup(author)))
 
 def setup(bot):
   bot.add_cog(MythicPlus(bot, get_config('./config/mythicplus.json')))
