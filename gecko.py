@@ -3,15 +3,15 @@
 import discord, os, time
 from discord.ext import commands
 from dotenv import dotenv_values
-from utils import get_logger, get_config
+from lib.utils import get_logger, get_config
 
 env = dict(dotenv_values(".env"))
 
-geckoConfig = get_config(env['CONFIG_FILEPATH'])
+geckoConfig = get_config(f"{env['CONFIG_DIR']}/gecko.json")
 
 logger = get_logger(
   name = f"gecko_{int(time.time())}",
-  configFile= geckoConfig.get("loggingConfigPath", "config/logger.json")
+  configFile= geckoConfig.get("loggingConfigPath", f"{env['CONFIG_DIR']}/logger.json")
 )
 
 intents = discord.Intents.default()
