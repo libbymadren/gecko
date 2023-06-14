@@ -39,13 +39,26 @@ class MythicKeyGroup():
     self.dps = []
 
   def remove_user(self, user):
-    match user:
-      case self.tank:
-        self.tank = ""
-      case self.healer:
-        self.healer = ""
-      case default:
-        self.dps.remove(user)
+    # match user:
+    #   case self.tank:
+    #     self.tank = ""
+    #     return 0
+    #   case self.healer:
+    #     self.healer = ""
+    #     return 1
+    #   case default:
+    #     if user in self.dps:
+    #       self.dps.remove(user)
+    #       return 2
+    if user == self.tank:
+      self.tank = ""
+      return "tank"
+    elif user == self.healer:
+      self.healer = ""
+      return "healer"
+    elif user in self.dps:
+      self.dps.remove(user)
+      return "dps"
   
   def getGroupList(self):
     groupList = [self.tank, self.healer]
@@ -53,7 +66,7 @@ class MythicKeyGroup():
     return groupList
 
 class ButtonView(discord.ui.View): 
-  def __init__(self, embed, msg, group, timeout=180):
+  def __init__(self, embed, msg, group, timeout=None):
     super().__init__(timeout=timeout)
     self.embed = embed
     self.msg = msg
@@ -105,11 +118,17 @@ class ButtonView(discord.ui.View):
   @discord.ui.button(label="Remove Self", row=0, style=discord.ButtonStyle.secondary)
   async def remove_self_button(self, button, interaction):
     user = interaction.user.id
-    self.group.remove_user(user)
-    embed_dict = self.embed.to_dict()
-    self.embed.set_field_at(index=0,name="Tank:",value=DEFAULT_ENTRY)
-    self.embed.set_field_at(index=1,name="Healer:",value=DEFAULT_ENTRY, inline=False)
-    self.embed.set_field_at(index=2,name="DPS:",value=DEFAULT_ENTRY)
+    role = self.group.remove_user(user)
+    if role == "tank":
+      self.embed.set_field_at(index=0,name="Tank:",value=DEFAULT_ENTRY)
+    elif role == "healer":
+      self.embed.set_field_at(index=1,name="Healer:",value=DEFAULT_ENTRY, inline=False)
+    elif role == "dps":
+      dps_value = ""
+      for x in self.group.dps:
+        dps_value += f"\n<@{x}>"
+      self.embed.set_field_at(index=2,name="DPS:",value=dps_value)
+          
     await interaction.response.defer()
     await interaction.edit_original_response(content=self.msg, embed=self.embed)
 
@@ -160,4 +179,3 @@ def setup(bot):
 def teardown(bot):
   bot.remove_cog(MythicPlus(bot, get_config('./config/mythicplus.json')))
   print("Mythicplus cog unloaded")
-    
