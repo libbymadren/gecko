@@ -24,7 +24,7 @@ class Setup(commands.Cog):
       await ctx.response.send_message("You are not authorized to run this command.", ephemeral=True)
     else:
       guild = ctx.guild
-      await ctx.respond("**Mythic+ setup:** Choose a role(s) to be pinged whenever a new mythic+ group is formed.", view=SelectView(guild))
+      await ctx.respond("**Mythic+ setup:** Choose a role to be pinged whenever a new mythic+ group is formed.", view=SelectView(guild))
 
   @commands.slash_command(description = "Reset your server's mythic+ ping.")
   async def reset_ping(self, ctx):
