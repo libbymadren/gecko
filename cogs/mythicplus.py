@@ -159,7 +159,7 @@ class MythicPlus(commands.Cog):
   @commands.slash_command(description = "Starts a key group.")
   async def keys(self, ctx, level: discord.Option(int), dungeon: discord.Option(str, choices = config['season2']['dungeons'])):
     embed = discord.Embed(
-      title=f"+{level} {self.config['season2']['dungeons'][dungeon.upper()]}",
+      title=f"+{level} {self.config['season2']['dungeons'][dungeon]}",
       description="",
       colour=0x00b0f4,
       timestamp=dt.now()
