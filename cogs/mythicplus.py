@@ -2,6 +2,7 @@ import discord, json, logging
 from discord.ext import commands
 from datetime import datetime as dt
 from lib.utils import get_config
+from helpers import db_manager
 
 # remove this if there's a better way to get the config data for the choices parameter
 config = get_config('./config/mythicplus.json')
@@ -168,8 +169,10 @@ class MythicPlus(commands.Cog):
     embed.add_field(name="Healer:", value=DEFAULT_ENTRY, inline=False)
     embed.add_field(name="DPS:", value=DEFAULT_ENTRY, inline=True)
         
+    result = db_manager.get_mythic_plus_ping((ctx.guild.id,))
+    ping_intro = f"Hey <@&{result[0]}>, " if result is not None else ""
     author = ctx.author.id
-    msg = f"<@{author}> is looking for a mythic+ group!"
+    msg = ping_intro + f"<@{author}> is looking for a mythic+ group!"
     await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, MythicKeyGroup(author)))
 
 def setup(bot):
