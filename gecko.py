@@ -18,7 +18,7 @@ logger = get_logger(
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(intents=intents)
+bot = commands.Bot(allowed_mentions=discord.AllowedMentions(roles=True, users=False, everyone=False), intents=intents)
 
 # Not used atm - if we want anything that isnt a slash_command I think we need this?
 @bot.event
