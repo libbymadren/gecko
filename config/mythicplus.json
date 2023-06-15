@@ -4,11 +4,16 @@
             "HOI": "Halls of Infusion",
             "BH": "Brackenhide Hollow",
             "ULD": "Uldaman: Legacy of Tyr",
-            "NEL": "Neltharus",
+            "NELT": "Neltharus",
             "NL": "Neltharion\"s Lair",
             "FH": "Freehold",
             "UR": "Underrot",
             "VP": "Vortex Pinnacle"
         }
+    },
+    "group_restrictions":{
+        "tanks":1,
+        "healers":1,
+        "dps":3
     }
 }
