@@ -1,6 +1,5 @@
 import discord, json, logging
 from discord.ext import commands
-import sqlite3
 from helpers import db_manager
 
 class SelectView(discord.ui.View):
