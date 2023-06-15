@@ -4,6 +4,7 @@ import discord, os, time
 from discord.ext import commands
 from dotenv import dotenv_values
 from lib.utils import get_logger, get_config
+import sqlite3
 
 env = dict(dotenv_values(".env"))
 
@@ -43,7 +44,23 @@ async def reload(ctx, extension):
   bot.reload_extension(f'cogs.{extension}')
   await ctx.send(f'Reloaded {extension} cog')
 
+# TODO: move this to db_manager once more tables are added
+@bot.event
+async def on_ready():
+  db = sqlite3.connect('database.db')
+  cursor = db.cursor()
+  cursor.execute(
+    '''
+    CREATE TABLE IF NOT EXISTS mythic_plus_pings(
+    guild_id INTEGER PRIMARY KEY,
+    ping_role INTEGER
+    )
+    '''
+  )
+  db.commit()
+
 if __name__ == "__main__":
+  # load cogs
   for filename in os.listdir('./cogs'):
     if filename.endswith('.py'):
       bot.load_extension(f'cogs.{filename[:-3]}')
