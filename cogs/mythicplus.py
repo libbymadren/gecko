@@ -157,18 +157,26 @@ class MythicPlus(commands.Cog):
       await channel.send(f'Welcome {member.mention}.')
 
   @commands.slash_command(description = "Starts a key group.")
-  async def keys(self, ctx, level: discord.Option(int), dungeon: discord.Option(str, choices = config['season2']['dungeons'])):
+  async def keys(
+    self, 
+    ctx, 
+    level: discord.Option(int, "the level of your key"), 
+    dungeon: discord.Option(str, "the dungeon name", choices = config['season2']['dungeons']), 
+    time = discord.Option(str, "[optional] the time you would like to run this key in the format XXh XXM, eg: 15m, 1h 30m", required=False, default = 'ASAP'),
+    note = discord.Option(str, "[optional] a note specifying any further info for this key", required=False, default = ''),
+  ):
+    # TODO: parse the time string into a disc timestamp
     embed = discord.Embed(
       title=f"+{level} {self.config['season2']['dungeons'][dungeon]}",
-      description="",
+      description=f"When: {time}\n*{note}*",
       colour=0x00b0f4,
       timestamp=dt.now()
     )
-  
+
     embed.add_field(name="Tank:", value=DEFAULT_ENTRY, inline=True)
     embed.add_field(name="Healer:", value=DEFAULT_ENTRY, inline=False)
     embed.add_field(name="DPS:", value=DEFAULT_ENTRY, inline=True)
-        
+      
     result = db_manager.get_mythic_plus_ping((ctx.guild.id,))
     ping_intro = f"Hey <@&{result[0]}>, " if result is not None else ""
     author = ctx.author.id
