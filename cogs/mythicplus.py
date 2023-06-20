@@ -166,7 +166,6 @@ class MythicPlus(commands.Cog):
     time = discord.Option(str, "[optional] the time you want to run this key in the future in the format `XXh XXm`, eg: 15m, 1h 30m", required=False, default = 'ASAP'),
     note = discord.Option(str, "[optional] a note specifying any further info for this key", required=False, default = ''),
   ):
-    # TODO: parse the time string into a disc timestamp
     parsed_time = self.parse_time(time)
     if parsed_time == False:
       await ctx.response.send_message("Incorrect time format. Please use the format `XXh XXm`, for example: 15m, 1h 30m, etc.", ephemeral=True)
