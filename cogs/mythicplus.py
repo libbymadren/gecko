@@ -1,6 +1,7 @@
 import discord, json, logging
 from discord.ext import commands
-from datetime import datetime as dt
+import time as t
+import datetime as dt
 from lib.utils import get_config
 from helpers import db_manager
 
@@ -157,23 +158,53 @@ class MythicPlus(commands.Cog):
       await channel.send(f'Welcome {member.mention}.')
 
   @commands.slash_command(description = "Starts a key group.")
-  async def keys(self, ctx, level: discord.Option(int), dungeon: discord.Option(str, choices = config['season2']['dungeons'])):
-    embed = discord.Embed(
-      title=f"+{level} {self.config['season2']['dungeons'][dungeon]}",
-      description="",
-      colour=0x00b0f4,
-      timestamp=dt.now()
-    )
-  
-    embed.add_field(name="Tank:", value=DEFAULT_ENTRY, inline=True)
-    embed.add_field(name="Healer:", value=DEFAULT_ENTRY, inline=False)
-    embed.add_field(name="DPS:", value=DEFAULT_ENTRY, inline=True)
+  async def keys(
+    self, 
+    ctx, 
+    level: discord.Option(int, "the level of your key"), 
+    dungeon: discord.Option(str, "the dungeon name", choices = config['season2']['dungeons']), 
+    time = discord.Option(str, "[optional] the time you want to run this key in the future in the format `XXh XXm`, eg: 15m, 1h 30m", required=False, default = 'ASAP'),
+    note = discord.Option(str, "[optional] a note specifying any further info for this key", required=False, default = ''),
+  ):
+    parsed_time = self.parse_time(time)
+    if parsed_time == False:
+      await ctx.response.send_message("Incorrect time format. Please use the format `XXh XXm`, for example: 15m, 1h 30m, etc.", ephemeral=True)
+    else:
+      if note != '':
+        note = '\"*' + note + '*\"'
+      embed = discord.Embed(
+        title=f"+{level} {self.config['season2']['dungeons'][dungeon]}",
+        description=f"When: {parsed_time}\n{note}",
+        colour=0x00b0f4,
+        timestamp=dt.datetime.now()
+      )
+
+      embed.add_field(name="Tank:", value=DEFAULT_ENTRY, inline=True)
+      embed.add_field(name="Healer:", value=DEFAULT_ENTRY, inline=False)
+      embed.add_field(name="DPS:", value=DEFAULT_ENTRY, inline=True)
         
-    result = db_manager.get_mythic_plus_ping((ctx.guild.id,))
-    ping_intro = f"Hey <@&{result[0]}>, " if result is not None else ""
-    author = ctx.author.id
-    msg = ping_intro + f"<@{author}> is looking for a mythic+ group!"
-    await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, MythicKeyGroup(author)))
+      result = db_manager.get_mythic_plus_ping((ctx.guild.id,))
+      ping_intro = f"Hey <@&{result[0]}>, " if result is not None else ""
+      author = ctx.author.id
+      msg = ping_intro + f"<@{author}> is looking for a mythic+ group!"
+      await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, MythicKeyGroup(author)))
+
+  def parse_time(self, time):
+    if time == 'ASAP':
+      return time
+    try: 
+      if (len(time.split()) > 1):
+        time_obj = t.strptime(time, "%Hh %Mm")
+      else:
+        time_obj = t.strptime(time, "%Mm")
+      seconds = dt.timedelta(hours=time_obj.tm_hour, minutes=time_obj.tm_min).total_seconds()
+      start_time = dt.datetime.now() + dt.timedelta(0, seconds)
+      return discord.utils.format_dt(start_time, style="R")
+      
+    except ValueError:
+      return False
+
+
 
 def setup(bot):
   bot.add_cog(MythicPlus(bot, get_config('./config/mythicplus.json')))
