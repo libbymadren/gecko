@@ -200,7 +200,7 @@ class MythicPlus(commands.Cog):
         time_obj = t.strptime(time, "%Mm")
       seconds = dt.timedelta(hours=time_obj.tm_hour, minutes=time_obj.tm_min).total_seconds()
       start_time = dt.datetime.now() + dt.timedelta(0, seconds)
-      return discord.utils.format_dt(start_time, style="t")
+      return discord.utils.format_dt(start_time, style="R")
       
     except ValueError:
       return False
