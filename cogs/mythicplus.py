@@ -193,10 +193,13 @@ class MythicPlus(commands.Cog):
     if time == 'ASAP':
       return time
     try: 
-      if (len(time.split()) > 1):
+      if len(time.split()) > 1:
         time_obj = t.strptime(time, "%Hh %Mm")
       else:
-        time_obj = t.strptime(time, "%Mm")
+        if time[-1] == 'm':
+          time_obj = t.strptime(time, "%Mm")
+        else:
+          time_obj = t.strptime(time, "%Hh")
       seconds = dt.timedelta(hours=time_obj.tm_hour, minutes=time_obj.tm_min).total_seconds()
       start_time = dt.datetime.now() + dt.timedelta(0, seconds)
       return discord.utils.format_dt(start_time, style="R")
