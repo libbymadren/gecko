@@ -68,10 +68,11 @@ class MythicKeyGroup():
     return groupList
 
 class ButtonView(discord.ui.View): 
-  def __init__(self, embed, msg, group, timeout=None):
+  def __init__(self, embed, msg, ctx, group, timeout=None):
     super().__init__(timeout=timeout)
     self.embed = embed
     self.msg = msg
+    self.ctx = ctx
     self.group = group
     self.dpsCount = 0
 
@@ -87,6 +88,8 @@ class ButtonView(discord.ui.View):
       self.embed.set_field_at(index=0,name="Tank:",value=f"<@{user}>")
       await interaction.response.defer()
       await interaction.edit_original_response(content=self.msg, embed=self.embed)
+      if user != self.group.groupOwner:
+        await self.ctx.respond(f"Hey <@{self.group.groupOwner}>! A new tank just signed up for your group!", ephemeral=True)
 
   @discord.ui.button(label="Healer", row=0, style=discord.ButtonStyle.primary, emoji=discord.PartialEmoji.from_str("<:healer_icon_white:1117620718155354162>"))
   async def heal_button(self, button, interaction):
@@ -100,6 +103,8 @@ class ButtonView(discord.ui.View):
       self.embed.set_field_at(index=1,name="Healer:",value=f"<@{user}>", inline=False)
       await interaction.response.defer()
       await interaction.edit_original_response(content=self.msg, embed=self.embed)
+      if user != self.group.groupOwner:
+        await self.ctx.respond(f"Hey <@{self.group.groupOwner}>! A new healer just signed up for your group!", ephemeral=True)
 
   @discord.ui.button(label="DPS", row=0, style=discord.ButtonStyle.primary, emoji=discord.PartialEmoji.from_str("<:dps_icon_white:1117620696818921493>"))
   async def dps_button(self, button, interaction):
@@ -116,6 +121,8 @@ class ButtonView(discord.ui.View):
       self.embed.set_field_at(index=2,name="DPS:",value=dps_value)
       await interaction.response.defer()
       await interaction.edit_original_response(content=self.msg, embed=self.embed)
+      if user != self.group.groupOwner:
+        await self.ctx.respond(f"Hey <@{self.group.groupOwner}>! A new DPS just signed up for your group!", ephemeral=True)
 
   @discord.ui.button(label="Remove Self", row=0, style=discord.ButtonStyle.secondary)
   async def remove_self_button(self, button, interaction):
@@ -134,8 +141,7 @@ class ButtonView(discord.ui.View):
     await interaction.response.defer()
     await interaction.edit_original_response(content=self.msg, embed=self.embed)
 
-  # TODO: make this button only visible to the group owner
-  # actually, I'm just going to hide this button for now, I don't think it'll be useful other than for debugging
+  # TODO: might need this later if we ever need a "reset group" button
   # @discord.ui.button(label="Reset Group", row=1, style=discord.ButtonStyle.secondary)
   # async def reset_group_button(self, button, interaction):
   #   self.group.reset_group()
@@ -163,7 +169,7 @@ class MythicPlus(commands.Cog):
     ctx, 
     level: discord.Option(int, "the level of your key"), 
     dungeon: discord.Option(str, "the dungeon name", choices = config['season2']['dungeons']), 
-    time = discord.Option(str, "[optional] the time you want to run this key in the future in the format `XXh XXm`, eg: 15m, 1h 30m", required=False, default = 'ASAP'),
+    time = discord.Option(str, "[optional] the time you want to run this key in the future in the format \"XXh XXm\", eg: 15m, 1h 30m", required=False, default = 'ASAP'),
     note = discord.Option(str, "[optional] a note specifying any further info for this key", required=False, default = ''),
   ):
     parsed_time = self.parse_time(time)
@@ -187,7 +193,7 @@ class MythicPlus(commands.Cog):
       ping_intro = f"Hey <@&{result[0]}>, " if result is not None else ""
       author = ctx.author.id
       msg = ping_intro + f"<@{author}> is looking for a mythic+ group!"
-      await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, MythicKeyGroup(author)))
+      await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
 
   def parse_time(self, time):
     if time == 'ASAP':
