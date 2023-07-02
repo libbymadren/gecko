@@ -1,4 +1,5 @@
 import discord, json, logging
+from discord.commands import SlashCommandGroup
 from discord.ext import commands
 import time as t
 import datetime as dt
@@ -17,13 +18,6 @@ class MythicKeyGroup():
     self.tank = ""
     self.healer = ""
     self.dps = []
-  
-  def set_tank(self, player):
-    
-    # if self.tanks in 
-    # if not self.tanks:
-
-    pass
 
   def get_group(self):
     return {
@@ -41,17 +35,6 @@ class MythicKeyGroup():
     self.dps = []
 
   def remove_user(self, user):
-    # match user:
-    #   case self.tank:
-    #     self.tank = ""
-    #     return 0
-    #   case self.healer:
-    #     self.healer = ""
-    #     return 1
-    #   case default:
-    #     if user in self.dps:
-    #       self.dps.remove(user)
-    #       return 2
     if user == self.tank:
       self.tank = ""
       return "tank"
@@ -111,7 +94,7 @@ class ButtonView(discord.ui.View):
     user = interaction.user.id
     if user in self.group.getGroupList():
       await interaction.response.send_message("You've already signed up for this group!", ephemeral=True)
-    elif len(self.group.dps) >= 3:
+    if len(self.group.dps) >= 3:
       await interaction.response.send_message("This group is full on DPS!", ephemeral=True) 
     else:
       embed_dict = self.embed.to_dict()
@@ -124,7 +107,7 @@ class ButtonView(discord.ui.View):
       if user != self.group.groupOwner:
         await self.ctx.respond(f"Hey <@{self.group.groupOwner}>! A new DPS just signed up for your group!", ephemeral=True)
 
-  @discord.ui.button(label="Remove Self", row=0, style=discord.ButtonStyle.secondary)
+  @discord.ui.button(label="Remove Self", row=1, style=discord.ButtonStyle.secondary)
   async def remove_self_button(self, button, interaction):
     user = interaction.user.id
     role = self.group.remove_user(user)
@@ -141,33 +124,27 @@ class ButtonView(discord.ui.View):
     await interaction.response.defer()
     await interaction.edit_original_response(content=self.msg, embed=self.embed)
 
-  # TODO: might need this later if we ever need a "reset group" button
-  # @discord.ui.button(label="Reset Group", row=1, style=discord.ButtonStyle.secondary)
-  # async def reset_group_button(self, button, interaction):
-  #   self.group.reset_group()
-  #   embed_dict = self.embed.to_dict()
-  #   self.embed.set_field_at(index=0,name="Tank:",value=DEFAULT_ENTRY)
-  #   self.embed.set_field_at(index=1,name="Healer:",value=DEFAULT_ENTRY, inline=False)
-  #   self.embed.set_field_at(index=2,name="DPS:",value=DEFAULT_ENTRY)
-  #   await interaction.response.defer()
-  #   await interaction.edit_original_response(content=self.msg, embed=self.embed)
+  # we'll see if people actually want the close group button
+  # @discord.ui.button(label="Close Group", row=1, style=discord.ButtonStyle.secondary)
+  # async def close_group_button(self, button, interaction):
+  #   if interaction.user.id != self.group.groupOwner:
+  #     await interaction.response.send_message("Only the group owner can close a group!", ephemeral=True) 
+  #   else:
+  #     self.disable_all_items()
+  #     await interaction.response.edit_message(view=self)
 
 class MythicPlus(commands.Cog):
-  def __init__(self, bot, config):
+  def __init__(self, bot: discord.Bot, config):
     self.bot = bot
     self.config = config
+    
+  keys = SlashCommandGroup("keys", "Start a new mythic+ group!")
 
-  @commands.Cog.listener()
-  async def on_member_join(self, member):
-    channel = member.guild.system_channel
-    if channel is not None:
-      await channel.send(f'Welcome {member.mention}.')
-
-  @commands.slash_command(description = "Starts a key group.")
-  async def keys(
-    self, 
-    ctx, 
-    level: discord.Option(int, "the level of your key"), 
+  @keys.command(description = "Start a group to run your mythic+ key!")
+  async def lfm(
+    self,
+    ctx: discord.ApplicationContext, 
+    level: discord.Option(int, "the level of your key", min_value=2), 
     dungeon: discord.Option(str, "the dungeon name", choices = config['season2']['dungeons']), 
     time = discord.Option(str, "[optional] the time you want to run this key in the future in the format \"XXh XXm\", eg: 15m, 1h 30m", required=False, default = 'ASAP'),
     note = discord.Option(str, "[optional] a note specifying any further info for this key", required=False, default = ''),
@@ -176,25 +153,39 @@ class MythicPlus(commands.Cog):
     if parsed_time == False:
       await ctx.response.send_message("Incorrect time format. Please use the format `XXh XXm`, for example: 15m, 1h 30m, etc.", ephemeral=True)
     else:
-      if note != '':
-        note = '\"*' + note + '*\"'
-      embed = discord.Embed(
-        title=f"+{level} {self.config['season2']['dungeons'][dungeon]}",
-        description=f"When: {parsed_time}\n{note}",
-        colour=0x00b0f4,
-        timestamp=dt.datetime.now()
-      )
-
-      embed.add_field(name="Tank:", value=DEFAULT_ENTRY, inline=True)
-      embed.add_field(name="Healer:", value=DEFAULT_ENTRY, inline=False)
-      embed.add_field(name="DPS:", value=DEFAULT_ENTRY, inline=True)
-        
-      result = db_manager.get_mythic_plus_ping((ctx.guild.id,))
-      ping_intro = f"Hey <@&{result[0]}>, " if result is not None else ""
+      title = f"+{level} {self.config['season2']['dungeons'][dungeon]}"
+      embed = self.create_embed(title, parsed_time, note)
+      
+      ping = db_manager.get_mythic_plus_ping((ctx.guild.id,))
+      ping_intro = f"Hey <@&{ping[0]}>, " if ping is not None else ""
       author = ctx.author.id
-      msg = ping_intro + f"<@{author}> is looking for a mythic+ group!"
-      await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
+      msg = ping_intro + f"<@{author}> is looking to run their key!"
 
+      await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
+    
+  @keys.command(description = "Get a group together to run anyone's key!")
+  async def lfg(
+    self,
+    ctx,
+    title: discord.Option(str, "a title for your group"), 
+    min_level: discord.Option(int, "the minimum level of the key you want to run", min_value=2), 
+    max_level: discord.Option(int, "the maximum level of the key you want to run", min_value=2), 
+    time = discord.Option(str, "[optional] the time you want to run this key in the future in the format \"XXh XXm\", eg: 15m, 1h 30m", required=False, default = 'ASAP'),
+    note = discord.Option(str, "[optional] a note specifying any further info for this key", required=False, default = ''),
+  ):
+    parsed_time = self.parse_time(time)
+    if parsed_time == False:
+      await ctx.response.send_message("Incorrect time format. Please use the format `XXh XXm`, for example: 15m, 1h 30m, etc.", ephemeral=True)
+    else:
+      embed = self.create_embed(title, parsed_time, note, min_level, max_level)
+      
+      ping = db_manager.get_mythic_plus_ping((ctx.guild.id,))
+      ping_intro = f"Hey <@&{ping[0]}>, " if ping is not None else ""
+      author = ctx.author.id
+      msg = ping_intro + f"<@{author}> is looking for a group to run some keys!"
+
+      await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
+  
   def parse_time(self, time):
     if time == 'ASAP':
       return time
@@ -209,11 +200,28 @@ class MythicPlus(commands.Cog):
       seconds = dt.timedelta(hours=time_obj.tm_hour, minutes=time_obj.tm_min).total_seconds()
       start_time = dt.datetime.now() + dt.timedelta(0, seconds)
       return discord.utils.format_dt(start_time, style="R")
-      
     except ValueError:
       return False
 
-
+  def create_embed(self, title, time, note, min_level=1, max_level=1):
+    if note != '':
+      note = '\"*' + note + '*\"'
+    
+    desc = ''
+    if min_level >= 2 and max_level >= 2:
+      desc += f"Levels: **+{min_level}** to **+{max_level}**\n"
+    desc += f"When: {time}\n{note}"
+    
+    embed = discord.Embed(
+      title=title,
+      description=desc,
+      colour=0x00b0f4,
+      timestamp=dt.datetime.now()
+    )
+    embed.add_field(name="Tank:", value=DEFAULT_ENTRY, inline=True)
+    embed.add_field(name="Healer:", value=DEFAULT_ENTRY, inline=False)
+    embed.add_field(name="DPS:", value=DEFAULT_ENTRY, inline=True)
+    return embed
 
 def setup(bot):
   bot.add_cog(MythicPlus(bot, get_config('./config/mythicplus.json')))
