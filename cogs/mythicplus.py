@@ -144,7 +144,7 @@ class MythicPlus(commands.Cog):
   async def lfm(
     self,
     ctx: discord.ApplicationContext, 
-    level: discord.Option(int, "the level of your key"), 
+    level: discord.Option(int, "the level of your key", min_value=2), 
     dungeon: discord.Option(str, "the dungeon name", choices = config['season2']['dungeons']), 
     time = discord.Option(str, "[optional] the time you want to run this key in the future in the format \"XXh XXm\", eg: 15m, 1h 30m", required=False, default = 'ASAP'),
     note = discord.Option(str, "[optional] a note specifying any further info for this key", required=False, default = ''),
