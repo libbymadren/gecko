@@ -94,7 +94,7 @@ class ButtonView(discord.ui.View):
     user = interaction.user.id
     if user in self.group.getGroupList():
       await interaction.response.send_message("You've already signed up for this group!", ephemeral=True)
-    elif len(self.group.dps) >= 3:
+    if len(self.group.dps) >= 3:
       await interaction.response.send_message("This group is full on DPS!", ephemeral=True) 
     else:
       embed_dict = self.embed.to_dict()
@@ -107,7 +107,7 @@ class ButtonView(discord.ui.View):
       if user != self.group.groupOwner:
         await self.ctx.respond(f"Hey <@{self.group.groupOwner}>! A new DPS just signed up for your group!", ephemeral=True)
 
-  @discord.ui.button(label="Remove Self", row=0, style=discord.ButtonStyle.secondary)
+  @discord.ui.button(label="Remove Self", row=1, style=discord.ButtonStyle.secondary)
   async def remove_self_button(self, button, interaction):
     user = interaction.user.id
     role = self.group.remove_user(user)
@@ -124,7 +124,14 @@ class ButtonView(discord.ui.View):
     await interaction.response.defer()
     await interaction.edit_original_response(content=self.msg, embed=self.embed)
 
-    # TODO: "close group" button
+  # we'll see if people actually want the close group button
+  # @discord.ui.button(label="Close Group", row=1, style=discord.ButtonStyle.secondary)
+  # async def close_group_button(self, button, interaction):
+  #   if interaction.user.id != self.group.groupOwner:
+  #     await interaction.response.send_message("Only the group owner can close a group!", ephemeral=True) 
+  #   else:
+  #     self.disable_all_items()
+  #     await interaction.response.edit_message(view=self)
 
 class MythicPlus(commands.Cog):
   def __init__(self, bot: discord.Bot, config):
