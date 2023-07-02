@@ -159,7 +159,7 @@ class MythicPlus(commands.Cog):
       ping = db_manager.get_mythic_plus_ping((ctx.guild.id,))
       ping_intro = f"Hey <@&{ping[0]}>, " if ping is not None else ""
       author = ctx.author.id
-      msg = ping_intro + f"Hey! <@{author}> is looking to run their key!"
+      msg = ping_intro + f"<@{author}> is looking to run their key!"
 
       await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
     
@@ -182,7 +182,7 @@ class MythicPlus(commands.Cog):
       ping = db_manager.get_mythic_plus_ping((ctx.guild.id,))
       ping_intro = f"Hey <@&{ping[0]}>, " if ping is not None else ""
       author = ctx.author.id
-      msg = ping_intro + f"Hey! <@{author}> is looking for a group to run some keys!"
+      msg = ping_intro + f"<@{author}> is looking for a group to run some keys!"
 
       await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
   
