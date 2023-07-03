@@ -156,10 +156,9 @@ class MythicPlus(commands.Cog):
       title = f"+{level} {self.config['season2']['dungeons'][dungeon]}"
       embed = self.create_embed(title, parsed_time, note)
       
-      ping = db_manager.get_mythic_plus_ping((ctx.guild.id,))
-      ping_intro = f"Hey <@&{ping[0]}>, " if ping is not None else ""
+      # TODO - make this no longer hardcoded when pings and database are reworked
       author = ctx.author.id
-      msg = ping_intro + f"<@{author}> is looking to run their key!"
+      msg = f"<@{author}> is looking to run their key! <@&1125234763964366919>"
 
       await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
     
@@ -179,10 +178,9 @@ class MythicPlus(commands.Cog):
     else:
       embed = self.create_embed(title, parsed_time, note, min_level, max_level)
       
-      ping = db_manager.get_mythic_plus_ping((ctx.guild.id,))
-      ping_intro = f"Hey <@&{ping[0]}>, " if ping is not None else ""
+      # TODO - make this no longer hardcoded when pings and database are reworked
       author = ctx.author.id
-      msg = ping_intro + f"<@{author}> is looking for a group to run some keys!"
+      msg = f"<@{author}> is looking for a group to run some keys! <@&1125234763964366919>"
 
       await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
   
