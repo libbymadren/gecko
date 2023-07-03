@@ -158,7 +158,7 @@ class MythicPlus(commands.Cog):
       
       # TODO - make this no longer hardcoded when pings and database are reworked
       author = ctx.author.id
-      msg = f"<@{author}> is looking to run their key! <@&1125234763964366919>"
+      msg = f"<@{author}> is looking to run their key! <@&1112106399367962625>"
 
       await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
     
@@ -180,7 +180,7 @@ class MythicPlus(commands.Cog):
       
       # TODO - make this no longer hardcoded when pings and database are reworked
       author = ctx.author.id
-      msg = f"<@{author}> is looking for a group to run some keys! <@&1125234763964366919>"
+      msg = f"<@{author}> is looking for a group to run some keys! <@&1112106399367962625>"
 
       await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
   
