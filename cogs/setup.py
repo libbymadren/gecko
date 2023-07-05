@@ -1,6 +1,8 @@
 import discord, json, logging
 from discord.ext import commands
+from discord.commands import SlashCommandGroup
 from helpers import db_manager
+import marshal
 
 class SelectView(discord.ui.View):
   def __init__(self, guild, timeout=180):
@@ -34,6 +36,46 @@ class Setup(commands.Cog):
   #     guild_id = ctx.guild.id
   #     db_manager.remove_mythic_plus_ping((guild_id,))
   #     await ctx.response.send_message("Mythic+ ping removed!")
+
+  async def is_admin(ctx):
+    return ctx.author.guild_permissions.administrator
+  
+  def initialized(self, guild_id):
+    if db_manager.get_guild_id((guild_id,)) is not None:
+      return True
+    return False
+  
+  setup = SlashCommandGroup("setup","setup")
+
+  @setup.command()
+  @commands.check(is_admin)
+  async def init(self, ctx):
+    if self.initialized(ctx.guild.id):
+      await ctx.respond("You have already initialized gecko for this server!", ephemeral=True)
+    else:
+      guild_id = ctx.guild.id
+      db_manager.initialize_server((guild_id, None))
+      await ctx.response.send_message("Server initialized!")
+      self.initialized = True
+  
+  @setup.command()
+  @commands.check(is_admin)
+  async def add_keys_channel(self, ctx):
+    if not self.initialized:
+      await ctx.response.send_message("Please use `/setup init` before running this command.", ephemeral=True)
+    else:
+      guild_id = ctx.guild.id
+      channel_id = ctx.channel.id
+      db_manager.add_keys_channel((channel_id, guild_id))
+      await ctx.respond("This channel can now use `/keys` commands!", ephemeral=True)
+
+  @init.error
+  @add_keys_channel.error
+  async def setup_error(self, ctx, error):
+    if isinstance(error, discord.errors.CheckFailure):
+      await ctx.respond("You do not have permission to run this command.", ephemeral=True)
+    else:
+      raise error
 
 def setup(bot):
   bot.add_cog(Setup(bot))

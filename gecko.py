@@ -51,9 +51,18 @@ async def on_ready():
   cursor = db.cursor()
   cursor.execute(
     '''
-    CREATE TABLE IF NOT EXISTS mythic_plus_pings(
+    CREATE TABLE IF NOT EXISTS keys_data(
     guild_id INTEGER PRIMARY KEY,
     ping_role INTEGER
+    )
+    '''
+  )
+  cursor.execute(
+    '''
+    Create TABLE IF NOT EXISTS keys_channels(
+    channel_id INTEGER,
+    guild_id INTEGER,
+    FOREIGN KEY (guild_id) REFERENCES keys_data(guild_id)
     )
     '''
   )

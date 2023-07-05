@@ -125,22 +125,36 @@ class ButtonView(discord.ui.View):
     await interaction.edit_original_response(content=self.msg, embed=self.embed)
 
   # we'll see if people actually want the close group button
-  # @discord.ui.button(label="Close Group", row=1, style=discord.ButtonStyle.secondary)
-  # async def close_group_button(self, button, interaction):
-  #   if interaction.user.id != self.group.groupOwner:
-  #     await interaction.response.send_message("Only the group owner can close a group!", ephemeral=True) 
-  #   else:
-  #     self.disable_all_items()
-  #     await interaction.response.edit_message(view=self)
+  @discord.ui.button(label="Close Group", row=1, style=discord.ButtonStyle.secondary)
+  async def close_group_button(self, button, interaction):
+    if interaction.user.id != self.group.groupOwner:
+      await interaction.response.send_message("Only the group owner can do that!", ephemeral=True)
+    elif button.label == "Undo Close Group":
+      self.enable_all_items()
+      button.label = "Close Group"
+      await interaction.response.defer()
+      await interaction.edit_original_response(content=self.msg, embed=self.embed, view=self)
+    else:
+      self.disable_all_items()
+      button.disabled = False
+      button.label = "Undo Close Group"
+      await interaction.response.defer()
+      await interaction.edit_original_response(content="~~" + self.msg + "~~", embed=self.embed, view=self)
 
 class MythicPlus(commands.Cog):
   def __init__(self, bot: discord.Bot, config):
     self.bot = bot
     self.config = config
-    
+
+  async def is_valid_channel(ctx):
+    keys_channels = db_manager.get_keys_channels((ctx.guild.id,))
+    return (ctx.channel.id,) in keys_channels
+
   keys = SlashCommandGroup("keys", "Start a new mythic+ group!")
 
   @keys.command(description = "Start a group to run your mythic+ key!")
+  @commands.check(is_valid_channel)
+  @commands.cooldown(1, 900, commands.BucketType.user)
   async def lfm(
     self,
     ctx: discord.ApplicationContext, 
@@ -163,6 +177,8 @@ class MythicPlus(commands.Cog):
       await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
     
   @keys.command(description = "Get a group together to run anyone's key!")
+  @commands.check(is_valid_channel)
+  @commands.cooldown(1, 900, commands.BucketType.user)
   async def lfg(
     self,
     ctx,
@@ -183,6 +199,20 @@ class MythicPlus(commands.Cog):
       msg = f"<@{author}> is looking for a group to run some keys! <@&1112106399367962625>"
 
       await ctx.respond(msg, embed=embed, view=ButtonView(embed, msg, ctx, MythicKeyGroup(author)))
+
+  @lfm.error
+  @lfg.error
+  async def keys_error(self, ctx, error):
+    # NOTE - this is an error message specific to TA's server setup. This should be changed to be something 
+    # more generic at a later time.
+    if isinstance(error, discord.errors.CheckFailure):
+      await ctx.respond("Hey there! You are not authorized to run `/keys` in this channel. Please make your group listings in <#1110961934611791945> or <#1124845386692042813>." + 
+                        " If you can't access these channels, please head to Channels & Roles (located at the top of the channel list) and select your region role (NA/OCE or EU). Thanks!", 
+                        ephemeral=True)
+    elif isinstance(error, commands.CommandOnCooldown):
+      await ctx.respond("Whoa there! To avoid spam, you can only make a new `/keys` posting once every 15 minutes. Please wait a little bit and try again.", ephemeral=True)
+    else:
+      raise error
   
   def parse_time(self, time):
     if time == 'ASAP':
