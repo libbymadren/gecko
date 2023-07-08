@@ -9,7 +9,8 @@
             "FH": "Freehold",
             "UR": "Underrot",
             "VP": "Vortex Pinnacle"
-        }
+        },
+	"megadungeon": "Dawn of the Infinite"
     },
     "group_restrictions":{
         "tanks":1,
